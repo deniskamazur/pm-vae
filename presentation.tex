@@ -1,0 +1,139 @@
+\documentclass{beamer}
+\usefonttheme[onlymath]{serif}
+
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+
+\usepackage{graphicx}
+\usepackage{ amssymb }
+\usepackage{amsmath}
+
+\usetheme{Madrid}
+
+\title{Вариационные Автоенкодеры с мультимодальным prior'ом}
+\author{Д. ~Мазур}
+
+\institute[Гимназия 1505] 
+{
+  10 Б класс\\
+  Школа 1505 "Преображенская"
+ }
+
+\begin{document}
+
+    \begin{frame}
+      \titlepage
+    \end{frame}
+    
+    \begin{frame}{Моделируем сложные системы}{}
+        Моделируем $p(x)$, где $x \in \mathcal{R}^D$ \pause
+
+        $p(x) - ?$
+    \end{frame}
+
+    \begin{frame}{Вводим латентные переменные}{}
+        $$z \in \mathcal{R}^d$$
+    \end{frame}
+
+    \begin{frame}{Кстати}{}
+        $\mathbf{z}$ - приорное распределение
+
+        $\mathbf{x}$ - постериорное распределение
+    \end{frame}
+
+    \begin{frame}{Вычисление постериорного распределения}{}
+        $$p(\mathbf{x}) = \int p(\mathbf{x} \mid \mathbf{z}) p(\mathbf{z}) ~d \mathbf{z}$$
+    \end{frame}
+
+    \begin{frame}{Применение методов Монте-Карло}{}
+        Может быть 
+        
+        $$p(\mathbf{x}) = \frac{1}{M} \sum_{m=1}^{M} p(\mathbf{x} \mid \mathbf{z}^{(m)})$$
+
+        $$\mathbf{z}^{(m)} \sim p(\mathbf{z})$$
+        \pause
+
+        Нет.
+    \end{frame}
+
+    \begin{frame}{Применение параметризованых распределений}{}
+        $$\theta \in \Theta \text{ - параметры нейронный сети}$$
+
+        $$\theta^* = \arg \max_{\theta \in \Theta} p_{\theta}(\mathbf{x}) $$
+    \end{frame}
+
+    \begin{frame}{Проблема}{}
+        Имеет экспоненциальную сложность
+        $$p(\mathbf{x}) = \int p(\mathbf{x} \mid \mathbf{z}) p(\mathbf{z}) ~d \mathbf{z}$$
+    \end{frame}
+
+    \begin{frame}{Доказательство}{}
+        $$q_\phi(\mathbf{z} \mid \mathbf{x})$$
+        $$\phi \in \Phi$$
+    \end{frame}
+
+    \begin{frame}{Доказательство}{}
+        $$p_\theta(\mathbf{x}) = \int p(\mathbf{z}) p_{\theta}(\mathbf{x} \mid \mathbf{z}) ~d\mathbf{z} \pause = $$
+        
+        $$\mathbb{E}_{p(\mathbf{z})} \left[p_\theta(\mathbf{x} \mid \mathbf{z})\right] \pause =
+          \mathbb{E}_{p(\mathbf{z})} \left[\frac{q_\phi(\mathbf{z} \mid \mathbf{x})}{{q_\phi(\mathbf{z} \mid \mathbf{x})}} p_\theta(\mathbf{x} \mid \mathbf{z}) \right] \pause =
+          \mathbb{E}_{q_\phi(\mathbf{x} \mid \mathbf{z})} \left[\frac{p_\theta(\mathbf{x} \mid \mathbf{z})}{q_\phi(\mathbf{z} \mid \mathbf{x})} p(\mathbf{z})\right]
+        $$
+    \end{frame}
+
+    \begin{frame}{Доказательство}{}
+        $$q_\phi(\mathbf{z} \mid \mathbf{x}) = \pause \frac{q_\phi(\mathbf{x} \mid \mathbf{z}) q(\mathbf{z})}{q(\mathbf{x})}$$
+        \pause
+        $$q_\phi (\mathbf{x} \mid \mathbf{z}) - ???$$
+    \end{frame}
+
+    \begin{frame}{Решение}{}
+        \setbeamertemplate{itemize items}[circle]
+        \begin{itemize}
+        \item $p_\theta(\mathbf{x}, \mathbf{z})$ - генеративная модель
+            \begin{itemize}
+               \item $p_\theta(\mathbf{x} \mid \mathbf{z})$ - декодер
+               \item $p(\mathbf{z})$ - приорное распределение скрытых переменных
+            \end{itemize}
+        \item $q_\phi(\mathbf{z} \mid \mathbf{x})$ - енкодер
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{Выведение функции потерь}{}
+        \begin{align*}
+        KL &\left(q_\phi(\mathbf{z} \mid \mathbf{x}) || p_\theta(\mathbf{z} \mid \mathbf{x})\right)\\
+        &=\mathbb{E}_{q_\phi(\mathbf{z} \mid \mathbf{x})} \left[\log \frac{q_\phi(\mathbf{z} \mid \mathbf{x})}{p_\theta(\mathbf{z} \mid \mathbf{x})}\right]\\
+        &=\mathbb{E}_{q_\phi(\mathbf{z} \mid \mathbf{x})} \left[ \log q_\phi(\mathbf{z} \mid \mathbf{x}) - \log p_\theta(\mathbf{z} \mid \mathbf{x})\right]\\
+        &=\mathbb{E}_{q_\phi(\mathbf{z} \mid \mathbf{x})}  \left[ \log q_\phi(\mathbf{z} \mid \mathbf{x}) - \log p_\theta(\mathbf{x}, \mathbf{z})\right] + \log p_\theta(\mathbf{x})\\
+        &= -\mathcal{L}(\mathbf{x}, \theta, \phi) + \log p_\theta(\mathbf{x})
+        \end{align*}
+    \end{frame}
+
+    \begin{frame}{Выведение формулы}{}
+        \begin{align*}
+        p_\theta(\mathbf{z} \mid \mathbf{x}) = \mathcal{L}(\mathbf{x}, \theta, \phi) +  KL &\left(q_\phi(\mathbf{z} \mid \mathbf{x}) || p_\theta(\mathbf{z} \mid \mathbf{x})\right)
+        \end{align*}
+    \end{frame}
+   
+    \begin{frame}{Библиография}
+        \begin{thebibliography}{9}
+            \bibitem{owen}
+            Art B. Owen, Monte Carlo theory, methods and examples
+            
+            \bibitem{akosiorek} 
+            Adam Kosiorek, What's wrong with VAEs
+
+            \bibitem{kingma}
+            Diederik P Kingma, Max Welling, Auto-Encoding Variational Bayes
+
+            \bibitem{ejang}
+            Eric Jang, Normalizing Flows tutorial
+            
+        \end{thebibliography}
+    \end{frame}
+
+    \begin{frame}{Выкладки}{}
+        $$-\log p(\mathbf{z} \mid \mathbf{x}) = -\log \frac{p(\mathbf{x}, \mathbf{z})}{p(\mathbf{x})} = -\log p(\mathbf{x}, \mathbf{z}) + \log p(\mathbf{x})$$
+    \end{frame}
+    
+\end{document}}
