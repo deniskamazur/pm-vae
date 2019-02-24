@@ -9,6 +9,8 @@
 \usepackage{ amssymb }
 \usepackage{amsmath}
 
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
 \usetheme{Madrid}
 
 \title{Вариационные Автоенкодеры с мультимодальным prior'ом}
@@ -78,6 +80,28 @@
        \begin{align*}
            q_\phi(\mathbf{z} \mid \mathbf{x}) \sim \mathcal{N}(\mu, \sigma^2)
        \end{align*} 
+    \end{frame}
+
+    \begin{frame}{Решения}
+        \begin{align*}
+            q_\phi(\mathbf{z} \mid \mathbf{x}) \sim \frac{1}{N} \sum^{N}_{k=0} \mathcal{N}(\mu_k, \sigma_k^2)
+            \pause
+        \end{align*}
+
+        \begin{align*}
+            \sigma(p_\theta(\mathbf{z} \mid \mathbf{x}) \cdot \mathbf{W} + b)
+        \end{align*}
+
+        \begin{align*}
+           \phi^*, \theta^* = \arg \max_{\phi \in \Phi, \theta \in \Theta} \mathcal{L}(\mathbf{x}, \theta, \phi) - \norm{W}
+        \end{align*}
+    \end{frame}
+
+    \begin{frame}{Решения}
+        \begin{thebibliography}{0}
+            \bibitem{rezende}
+            Variational Inference with Normalizing Flows
+        \end{thebibliography}
     \end{frame}
    
     \begin{frame}{Библиография}
