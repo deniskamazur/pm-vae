@@ -8,3 +8,5 @@
 *.nav
 *.snm
 *.out
+**/data/
+**/.ipynb_checkpoints/

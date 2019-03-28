@@ -6,8 +6,15 @@
 \usepackage{amsfonts}
 \usepackage{verbatim}
 \usepackage{atbegshi}
+\usepackage{tikz}
+\usepackage[options ]{algorithm2e}
+\usepackage{graphicx}
+\usetikzlibrary{arrows}
 
-\title{Вариационные Автоенкодеры с мультиномиальным Prior'ом.}
+\tikzstyle{int}=[draw, fill=blue!20, minimum size=2em]
+\tikzstyle{init} = [pin edge={to-,thin,black}]
+
+\title{Вариационные Автоэнкодеры с полимодальнымы латентными переменными.}
 \author{Денис Мазур}
 \date{Ноябрь 2018}
 
@@ -87,7 +94,7 @@ $\mathbf{z}$ может описывать их цвет, породу и пол
 Имея подобную систему нам бы хотелось знать плотность распределения самих латентных переменных $\mathbf{z}$, при том, что мы знаем соответсвующий
 им $\mathbf{x}$. Если быть точнее, то мы хотим знать апостериорное распределение $p(\mathbf{z} \mid \mathbf{x})$. Но зависимость между $\mathbf{x}$ и
 $\mathbf{x}$ может быть крайне нелинейной, а размерности $D$ и $d$ достаточно большими, а так как и частное распределение $p(\mathbf{x})$ и апостериорное
-распределение $p(\mathbf{z} \mid \mathbf{x})$ требуют вычисления интеграла, они трудновычислимы.
+распределение $p(\mathbf{z} \mid \mathbf{x})$ требуют вычисления интеграла, они не поддаются вычислению.
 
 \begin{comment}
     про трудность решения методом монте-карло
@@ -141,11 +148,75 @@ $\mathbf{z}$ в моделируемые переменные $\mathbf{x}$. Ен
     \mathbb{E}_{q_\theta(\mathbf{z} \mid \mathbf{x})} \left[\log q_\phi(\mathbf{z} \mid \mathbf{x}) - p_\theta(\mathbf{z} \mid \mathbf{x})\right]
 \end{gather*}
 
-Разумеется, мы не можем напрямую посчитать это ``расстояние'' по причине того, что нам неизвесты оба апостериорных распределения, но решить
-эту проблему можно решая двойственную задачу, называемой оцениванием нижней границы (estimate lower bound):
+Разумеется, мы не можем напрямую посчитать это ``расстояние'' по причине того, что нам неизвесты оба апостериорных распределения, \\
+но решить эту проблему можно решая двойственную задачу, называемой Evidence Lower Bound (ELBo):
 
-\newpage
-\bibliography{bibliography} 
-\bibliographystyle{ieeetr}
+\begin{align*}
+     KL&(q_\phi(\mathbf{z} \mid \mathbf{x}) || p_\theta(\mathbf{z} \mid \mathbf{x})) \\
+    &= \int q_\phi(\mathbf{z} \mid \mathbf{x}) \frac{q_\phi(\mathbf{z} \mid \mathbf{x})}{p_\theta(\mathbf{z} \mid \mathbf{x})}~d\mathbf{x}\\
+    &= \mathbb{E}_{q_\theta(\mathbf{z} \mid \mathbf{x})} \left[\frac{q_\phi(\mathbf{z} \mid \mathbf{x})}{p_\theta(\mathbf{z} \mid \mathbf{x})}\right]\\
+    &= \mathbb{E}_{q_\theta(\mathbf{z} \mid \mathbf{x})} \left[\log q_\phi(\mathbf{z} \mid \mathbf{x}) - \log p_\theta(\mathbf{z} \mid \mathbf{x})\right]\\
+    &= \mathbb{E}_{q_\theta(\mathbf{z} \mid \mathbf{x})} \left[\log q_\phi(\mathbf{z} \mid \mathbf{x}) - \log p(\mathbf{x}, \mathbf{z})\right] + \log p_\theta(\mathbf{x})\\
+    &= \mathcal{L}(\mathbf{x}, \theta, \phi) + \log p_\theta(\mathbf{x})
+\end{align*}
 
+На четвёртой строчке мы раскрываем логарифм, на пятой мы примениям теорему Байеса и пользуемся тем, что $p(\mathbf{x})$ независим от $\mathbf{z}$. Данное
+выражение мы можем переписать следущим образом:
+
+\begin{align*}
+  \log p_\theta(\mathbf{x}) = \mathcal{L} (\mathbf{x}; \theta, \phi) + KL \left( q_\phi (\mathbf{z} \mid \mathbf{x}) || p_\theta(\mathbf{z} \mid \mathbf{x}) \right)
+\end{align*}
+
+\begin{align*}
+  \mathcal{L} (\mathbf{x}; \theta, \phi) = \mathbb{E}_{q_\phi (\mathbf{z} \mid \mathbf{x})}
+    \left[
+      \log \frac{
+        p_\theta (\mathbf{x}, \mathbf{z})
+      }{
+        q_\phi (\mathbf{z} \mid \mathbf{x})
+      }
+    \right].
+\end{align*}
+
+Мы можем приближённо вычислить ELBo, используя один элемент из нашего смещённого распределения $q_\phi(\mathbf{z} \mid \mathbf{x})$:
+\begin{align*}
+   \mathcal{L} (\mathbf{x}; \theta, \phi) \approx  \log \frac{
+      p_\theta (\mathbf{x}, \mathbf{z})
+    }{
+      q_\phi (\mathbf{z} \mid \mathbf{x})
+    }, \qquad \mathbf{z} \sim q_\phi (\mathbf{z} \mid \mathbf{x}). 
+\end{align*}
+
+Имея функцию потерь (ELBo) мы можем найти оптмальые параметры $\phi$ и $\theta$ с помощью градиентного спуска:
+\begin{align*}
+  \phi^\star,~\theta^\star = \arg \max_{\phi \in \Phi,~\theta \in \Theta}
+  \mathcal{L} (\mathbf{x}; \theta, \phi).  
+\end{align*}
+
+\section{Наша работа}
+
+\section{Недостатки вариационных автоэнкдеров}
+
+При построении декодера нашей модели мы предполагаем, что $\mathbf{z}$ распределены нормально, то есть $p(\mathbf{z})$ имеет плотность нормального
+распределения. Но в большинсве случаев это распределение имеет более сложную форму, часто полимодальное. По этой причине распределения изображений,
+моделируемые вариационными автоэнкдерами часто получаются размытими.
+
+Решением этой проблемы могло бы быть минимизировать девергенцию Кульбака-Лейблера не между нашей моделью и нормальным распределением, а, например,
+смесью нормальных распределений. Проблема в этом случае заключается в том, что параметры приближаемого распределения выбираются произволно, а посему
+будут требовать долгой подборки оптимальных параметров.
+
+Решить эту проблему можно дав нейронной сети возможность самостоятельно выбирать параметры приближаемого распределения. Осуществить это можно
+следующим образом: вместо того, чтобы генерировать вектор латентных переменных $\mathbf{z}$ размером $d$, генерировать матрицу размерности $d \times N$, где
+$N$ - число гауссиан из которых нейронная сеть может выбирать. Выбор параметров гауссины осуществляется с помощью генерации onehot-матрицы D размерности 
+$d \times N$. Onehot-матрица - это матрица, которая имеет одну еденицу на каждой строчке, а остальные компоненты равны нулю. После этого матрица поэлементно умножается
+на параметры распределений, заданных $z$. После чего строчки полученной матрицы суммируются, получая вектор размера $d$. Подробный алгоритм получения
+новых $z$ показан на русунке 1\label{fig:musigma}
+
+\begin{figure}[h!]
+  \includegraphics[width=\linewidth]{block-diagram.png}
+  \caption{Блок схема получаения $\mu$ и $\sigma$}
+  \label{fig:musigma}
+\end{figure}
+
+\subsection{Результаты}
 \end{document}
