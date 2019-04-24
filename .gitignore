@@ -1,3 +1,4 @@
+# latex
 *.aux
 *.dvi
 *.fdb_latexmk
@@ -10,3 +11,5 @@
 *.out
 **/data/
 **/.ipynb_checkpoints/
+
+.vscode/
